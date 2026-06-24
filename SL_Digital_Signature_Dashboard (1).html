@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Database — SL Digital Signature</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F7FA;--surface:#fff;--surface2:#F0F2F7;--border:#E4E8EF;
+  --text:#111827;--text2:#4B5563;--text3:#9CA3AF;
+  --accent:#2563EB;--accent-light:#EFF6FF;--accent-mid:#BFDBFE;
+  --aeo:#7C3AED;--aeo-light:#F5F3FF;--aeo-mid:#DDD6FE;
+  --ft:#0891B2;--ft-light:#ECFEFF;--ft-mid:#A5F3FC;
+  --cert:#059669;--cert-light:#ECFDF5;--cert-mid:#A7F3D0;
+  --red:#DC2626;--red-light:#FEF2F2;--red-mid:#FECACA;
+  --amber:#D97706;--amber-light:#FFFBEB;--amber-mid:#FCD34D;
+  --gray:#6B7280;--gray-light:#F9FAFB;--gray-mid:#E5E7EB;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.03);
+  --shadow:0 4px 16px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ─────────────────────────────────────── */
+header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 28px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow-sm)}
+.hdr{max-width:1600px;margin:0 auto;display:flex;align-items:center;gap:14px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex-shrink:0}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#2563EB,#7C3AED);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+.logo-text{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.logo-sub{font-size:10.5px;color:var(--text3);margin-top:1px}
+.hdr-search{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:7px 12px;gap:7px;width:280px;transition:border-color .15s;margin-left:auto}
+.hdr-search:focus-within{border-color:var(--accent)}
+.hdr-search input{border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);width:100%}
+.hdr-search input::placeholder{color:var(--text3)}
+.hdr-clear{cursor:pointer;color:var(--text3);font-size:13px;display:none;flex-shrink:0}
+.hdr-db{font-size:11px;color:var(--text3);white-space:nowrap;display:flex;align-items:center;gap:5px}
+.db-dot{width:7px;height:7px;border-radius:50%;background:#10B981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── MAIN ───────────────────────────────────────── */
+main{max-width:1600px;margin:0 auto;padding:22px 28px;flex:1;width:100%}
+
+/* ── LOADING ────────────────────────────────────── */
+#loadingState{text-align:center;padding:80px 20px;color:var(--text3)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#appContent{display:none}
+
+/* ── CLARIFICATION ──────────────────────────────── */
+.info-bar{background:var(--amber-light);border:1.5px solid var(--amber-mid);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:12px;color:#92400E;line-height:1.6}
+.info-bar strong{color:#78350F}
+.info-toggle{cursor:pointer;color:var(--accent);font-size:11.5px;font-weight:500;margin-left:6px;text-decoration:underline}
+.info-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--amber-mid);display:none;font-size:11.5px}
+.info-detail.open{display:block}
+
+/* ── STATS GRID ─────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:12px;margin-bottom:18px}
+.sc{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:15px 17px 13px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;user-select:none}
+.sc:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.sc.active{border-color:var(--sc-color);box-shadow:0 0 0 3px var(--sc-ring)}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc-color);transform:scaleX(0);transform-origin:left;transition:transform .2s}
+.sc:hover::after,.sc.active::after{transform:scaleX(1)}
+.sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px}
+.sc-num{font-size:28px;font-weight:700;line-height:1;color:var(--sc-color);font-feature-settings:'tnum'}
+.sc-note{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.3}
+.sc-icon{position:absolute;right:11px;top:11px;font-size:18px;opacity:.12}
+
+/* ── FILTERS ────────────────────────────────────── */
+.filter-bar{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.f-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);white-space:nowrap;flex-shrink:0}
+.f-group{display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:center}
+.f-sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1.5px solid var(--border);border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text2);transition:all .15s;user-select:none;white-space:nowrap}
+.chip:hover{border-color:var(--chip-c);color:var(--chip-c);background:var(--chip-bg)}
+.chip.active{background:var(--chip-c);border-color:var(--chip-c);color:#fff;box-shadow:0 2px 8px var(--chip-ring)}
+.cdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.ccnt{background:rgba(255,255,255,.28);border-radius:100px;padding:0 5px;font-size:10px;font-weight:700;min-width:16px;text-align:center}
+.chip:not(.active) .ccnt{background:var(--surface2);color:var(--text3)}
+.btn-reset{font-size:11.5px;color:var(--text3);cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 8px;border-radius:6px;transition:all .15s;white-space:nowrap}
+.btn-reset:hover{color:var(--red);background:var(--red-light)}
+
+/* ── TABLE SECTION ──────────────────────────────── */
+.tbl-section{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tbl-hdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tbl-title{font-size:13px;font-weight:600}
+.tbl-cnt{font-size:11.5px;color:var(--text3);background:var(--surface2);border-radius:100px;padding:3px 10px}
+.tbl-acts{display:flex;gap:6px;margin-left:auto}
+.btn-act{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:var(--radius-sm);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid;transition:all .15s}
+.btn-csv{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
+.btn-csv:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-pdf{background:var(--red-light);border-color:var(--red-mid);color:var(--red)}
+.btn-pdf:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{padding:9px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color .12s}
+thead th:hover{color:var(--text2)}
+.si{margin-left:3px;opacity:.3;font-size:9px}
+thead th.sorted .si{opacity:1;color:var(--accent)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#F8FAFF;cursor:pointer}
+tbody tr.row-selected{background:#EFF6FF}
+tbody td{padding:9px 13px;vertical-align:middle}
+.c-sn{color:var(--text3);font-size:11px;font-family:'DM Mono',monospace}
+.c-no{color:var(--text3);font-size:11px;font-family:'DM Mono',monospace}
+.c-tin{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);letter-spacing:.02em}
+.c-tin.empty{color:var(--text3);font-style:italic}
+.c-name{font-weight:500;color:var(--text);max-width:300px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
+.bdot{width:4px;height:4px;border-radius:50%;background:currentColor}
+.b-aeo{background:var(--aeo-light);color:var(--aeo);border:1px solid var(--aeo-mid)}
+.b-ft{background:var(--ft-light);color:var(--ft);border:1px solid var(--ft-mid)}
+.b-cert{background:var(--cert-light);color:var(--cert);border:1px solid var(--cert-mid)}
+.c-flags{display:flex;gap:4px;flex-wrap:wrap;min-width:120px}
+.f-none{color:var(--text3);font-size:11px}
+mark{background:#FEF9C3;color:inherit;border-radius:2px;padding:0 1px}
+
+/* ── ROW DETAIL PANEL ───────────────────────────── */
+.detail-row{background:#F8FAFF;border-bottom:1px solid var(--border)}
+.detail-row td{padding:10px 16px 14px 52px}
+.detail-grid{display:flex;gap:20px;flex-wrap:wrap;font-size:12px}
+.detail-item{display:flex;flex-direction:column;gap:2px;min-width:160px}
+.detail-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.detail-val{color:var(--text2);font-weight:500}
+.detail-val a{color:var(--accent);text-decoration:none}
+.detail-val a:hover{text-decoration:underline}
+.detail-val.empty{color:var(--text3);font-style:italic}
+
+/* ── PAGINATION ─────────────────────────────────── */
+.pg{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-top:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:8px}
+.pg-info{font-size:11px;color:var(--text3)}
+.pg-ctrl{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.pg-btn{min-width:28px;height:28px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-family:inherit;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .15s;padding:0 5px}
+.pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed}
+.pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-sz{font-size:11.5px;color:var(--text2);border:1.5px solid var(--border);border-radius:7px;padding:4px 6px;background:var(--surface);font-family:inherit;cursor:pointer;outline:none}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text3)}
+.empty-state .ei{font-size:34px;margin-bottom:10px}
+.empty-state h3{font-size:14px;color:var(--text2);margin-bottom:5px}
+
+/* ── FOOTER ─────────────────────────────────────── */
+footer{background:#1F2937;color:#9CA3AF;text-align:center;padding:13px 28px;font-size:11.5px;letter-spacing:.01em;margin-top:28px}
+footer strong{color:#F3F4F6}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-icon">🔏</div>
+      <div>
+        <div class="logo-text">Company Database</div>
+        <div class="logo-sub">Sri Lanka Digital Signature Registry</div>
+      </div>
+    </div>
+    <div class="hdr-search">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#9CA3AF;flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search name or TIN…">
+      <span class="hdr-clear" id="searchClear" onclick="clearSearch()">✕</span>
+    </div>
+    <div class="hdr-db">
+      <span class="db-dot"></span>
+      <span id="dbStatus">Loading…</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Loading -->
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <p>Loading company database…</p>
+  </div>
+
+  <!-- App content (shown after data loads) -->
+  <div id="appContent">
+
+    <!-- Clarification note -->
+    <div class="info-bar">
+      <strong>📊 Data Notes</strong> &nbsp;
+      AEO source file: <strong>71 companies</strong> — flagged strictly by TIN match only, so count is exactly 71 (or fewer if any share TINs).
+      Fast Track source: <strong>163 companies</strong> (164 rows incl. header) — 158 unique records after deduplicating 5 companies that appeared multiple times in the FT file under different TIN variants or name spellings.
+      <span class="info-toggle" onclick="toggleInfo()">Show details ▾</span>
+      <div class="info-detail" id="infoDetail">
+        <strong>Fast Track merged duplicates (−5 rows → same company):</strong><br>
+        • SOFTLOGIC COMMUNICATIONS PVT LTD — 2 rows → 1 record<br>
+        • K A DINAPALA &amp; CO — 2 rows (TIN had -1 suffix) → 1 record<br>
+        • STATE PHARMACEUTICALS MANUFAT.CORP — 2 rows → 1 record<br>
+        • CEYLON ELECTRICITY BOARD — 3 rows → 1 record<br><br>
+        <strong>Contact data availability:</strong> AEO companies have full contact details (person, phone, email). Fast Track companies have phone &amp; email where available. Companies Joint and Certified-only entries have no contact data in source files.
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <span class="f-label">Filter</span>
+      <div class="f-group" id="chipGroup">
+        <div class="chip" data-f="aeo" style="--chip-c:#7C3AED;--chip-bg:#F5F3FF;--chip-ring:rgba(124,58,237,.25)" onclick="toggleChip(this,'aeo')">
+          <span class="cdot"></span> AEO <span class="ccnt" id="cc-aeo">0</span>
+        </div>
+        <div class="chip" data-f="fasttrack" style="--chip-c:#0891B2;--chip-bg:#ECFEFF;--chip-ring:rgba(8,145,178,.25)" onclick="toggleChip(this,'fasttrack')">
+          <span class="cdot"></span> Fast Track <span class="ccnt" id="cc-ft">0</span>
+        </div>
+        <div class="chip" data-f="certified" style="--chip-c:#059669;--chip-bg:#ECFDF5;--chip-ring:rgba(5,150,105,.25)" onclick="toggleChip(this,'certified')">
+          <span class="cdot"></span> Certified <span class="ccnt" id="cc-cert">0</span>
+        </div>
+        <div class="chip" data-f="not_aeo" style="--chip-c:#6B7280;--chip-bg:#F9FAFB;--chip-ring:rgba(107,114,128,.2)" onclick="toggleChip(this,'not_aeo')">
+          <span class="cdot"></span> Not AEO <span class="ccnt" id="cc-naeo">0</span>
+        </div>
+        <div class="chip" data-f="not_ft" style="--chip-c:#6B7280;--chip-bg:#F9FAFB;--chip-ring:rgba(107,114,128,.2)" onclick="toggleChip(this,'not_ft')">
+          <span class="cdot"></span> Not Fast Track <span class="ccnt" id="cc-nft">0</span>
+        </div>
+        <div class="chip" data-f="not_cert" style="--chip-c:#6B7280;--chip-bg:#F9FAFB;--chip-ring:rgba(107,114,128,.2)" onclick="toggleChip(this,'not_cert')">
+          <span class="cdot"></span> Not Certified <span class="ccnt" id="cc-ncert">0</span>
+        </div>
+      </div>
+      <div class="f-sep"></div>
+      <button class="btn-reset" onclick="resetAll()">✕ Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="tbl-section">
+      <div class="tbl-hdr">
+        <span class="tbl-title">Company List</span>
+        <span class="tbl-cnt" id="tblCnt">—</span>
+        <div class="tbl-acts">
+          <button class="btn-act btn-csv" onclick="exportCSV()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn-act btn-pdf" onclick="exportPDF()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:46px">S/N</th>
+              <th onclick="sortBy('no',event)" style="width:48px">#<span class="si">↕</span></th>
+              <th onclick="sortBy('tin',event)">TIN<span class="si">↕</span></th>
+              <th onclick="sortBy('name',event)">Company Name<span class="si">↕</span></th>
+              <th>Flags</th>
+              <th onclick="sortBy('contact_person',event)">Contact<span class="si">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="ei">🔍</div><h3>No companies found</h3><p>Adjust search or filters.</p>
+      </div>
+      <div class="pg" id="pgBar">
+        <span class="pg-info" id="pgInfo"></span>
+        <div class="pg-ctrl">
+          <select class="pg-sz" id="pgSz" onchange="changePs()">
+            <option value="25">25/page</option>
+            <option value="50" selected>50/page</option>
+            <option value="100">100/page</option>
+            <option value="9999">All</option>
+          </select>
+          <button class="pg-btn" id="btnFirst" onclick="goPage(1)">«</button>
+          <button class="pg-btn" id="btnPrev" onclick="goPage(cp-1)">‹</button>
+          <span id="pgNums" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+          <button class="pg-btn" id="btnNext" onclick="goPage(cp+1)">›</button>
+          <button class="pg-btn" id="btnLast" onclick="goPage(tp)">»</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /appContent -->
+</main>
+
+<footer>
+  <strong>Developed by Buddhika Dissanayake</strong> — RARMB &copy; 2026 &nbsp;|&nbsp; Sri Lanka Digital Signature Registry
+</footer>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+// Database file path — update this if you move the JSON file
+const DB_PATH = 'company_database.json';
+
+// ── STATE ─────────────────────────────────────────────────
+let DB = [], filtered = [], activeF = new Set(), searchQ = '', sortF = 'no', sortD = 1, cp = 1, ps = 50, tp = 1, qfMode = null, openRow = null;
+
+// ── CHIP CONFLICTS ────────────────────────────────────────
+const CONFLICT = {aeo:'not_aeo',not_aeo:'aeo',fasttrack:'not_ft',not_ft:'fasttrack',certified:'not_cert',not_cert:'certified'};
+
+// ── LOAD DATABASE ─────────────────────────────────────────
+async function loadDB() {
+  try {
+    const res = await fetch(DB_PATH);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    DB = await res.json();
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    document.getElementById('dbStatus').textContent = `${DB.length.toLocaleString()} companies`;
+    buildStats();
+    updateChipCounts();
+    apply();
+  } catch(e) {
+    document.getElementById('loadingState').innerHTML = `
+      <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+      <h3 style="color:#DC2626;font-size:15px;margin-bottom:8px">Could not load database</h3>
+      <p style="color:#6B7280;font-size:13px">Make sure <strong>company_database.json</strong> is in the same folder as this HTML file.</p>
+      <p style="color:#9CA3AF;font-size:11px;margin-top:8px">Error: ${e.message}</p>`;
+    document.getElementById('dbStatus').textContent = 'Error';
+  }
+}
+
+// ── STATS CARDS ───────────────────────────────────────────
+const STATS_DEF = [
+  {qf:'all',    icon:'🏢', label:'Total',        color:'#374151', ring:'rgba(55,65,81,.12)',   key:r=>true,                          note:'All companies'},
+  {qf:'aeo',    icon:'⭐', label:'AEO',          color:'#7C3AED', ring:'rgba(124,58,237,.14)', key:r=>r.aeo,                         note:'AEO companies'},
+  {qf:'fasttrack',icon:'⚡',label:'Fast Track',  color:'#0891B2', ring:'rgba(8,145,178,.14)',  key:r=>r.fasttrack,                   note:'163 source, 5 merged'},
+  {qf:'certified',icon:'✅',label:'Certified',   color:'#059669', ring:'rgba(5,150,105,.14)',  key:r=>r.certified,                   note:'Already have signature'},
+  {qf:'none',   icon:'⏳', label:'No Flags',     color:'#6B7280', ring:'rgba(107,114,128,.12)',key:r=>!r.aeo&&!r.fasttrack&&!r.certified, note:'Not AEO, FT or Cert'},
+  {qf:'aeo+certified',    icon:'🏆',label:'AEO + Certified',   color:'#7C3AED',ring:'rgba(124,58,237,.12)',key:r=>r.aeo&&r.certified,              note:''},
+  {qf:'fasttrack+certified',icon:'🚀',label:'FT + Certified',  color:'#0891B2',ring:'rgba(8,145,178,.12)', key:r=>r.fasttrack&&r.certified,         note:''},
+  {qf:'aeo+fasttrack',    icon:'💎',label:'AEO + Fast Track',  color:'#D97706',ring:'rgba(217,119,6,.12)', key:r=>r.aeo&&r.fasttrack,               note:'Dual priority'},
+  {qf:'aeo+fasttrack+certified',icon:'🎯',label:'All Three',   color:'#DC2626',ring:'rgba(220,38,38,.12)', key:r=>r.aeo&&r.fasttrack&&r.certified,  note:'AEO+FT+Cert'},
+];
+
+function buildStats() {
+  const g = document.getElementById('statsGrid');
+  g.innerHTML = STATS_DEF.map(s => {
+    const n = DB.filter(s.key).length;
+    return `<div class="sc" style="--sc-color:${s.color};--sc-ring:${s.ring}" data-qf="${s.qf}" onclick="quickFilter('${s.qf}',this)">
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-lbl">${s.label}</div>
+      <div class="sc-num">${n.toLocaleString()}</div>
+      ${s.note?`<div class="sc-note">${s.note}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function updateChipCounts() {
+  const t = DB.length;
+  const set = (id,n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
+  set('cc-aeo',  DB.filter(r=>r.aeo).length);
+  set('cc-ft',   DB.filter(r=>r.fasttrack).length);
+  set('cc-cert', DB.filter(r=>r.certified).length);
+  set('cc-naeo', DB.filter(r=>!r.aeo).length);
+  set('cc-nft',  DB.filter(r=>!r.fasttrack).length);
+  set('cc-ncert',DB.filter(r=>!r.certified).length);
+}
+
+// ── FILTER & SORT ─────────────────────────────────────────
+function apply() {
+  let d = [...DB];
+  // quick filter
+  if (qfMode && qfMode !== 'all') {
+    if (qfMode === 'none') { d = d.filter(r=>!r.aeo&&!r.fasttrack&&!r.certified); }
+    else {
+      const parts = qfMode.split('+');
+      d = d.filter(r => parts.every(p =>
+        p==='aeo'?r.aeo : p==='fasttrack'?r.fasttrack : p==='certified'?r.certified : true
+      ));
+    }
+  }
+  // chip filters
+  for (const f of activeF) {
+    if (f==='aeo')      d=d.filter(r=>r.aeo);
+    else if(f==='fasttrack') d=d.filter(r=>r.fasttrack);
+    else if(f==='certified') d=d.filter(r=>r.certified);
+    else if(f==='not_aeo')   d=d.filter(r=>!r.aeo);
+    else if(f==='not_ft')    d=d.filter(r=>!r.fasttrack);
+    else if(f==='not_cert')  d=d.filter(r=>!r.certified);
+  }
+  // search
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    d = d.filter(r => r.name.toLowerCase().includes(q) || r.tin.includes(q) || (r.contact_person||'').toLowerCase().includes(q));
+  }
+  // sort
+  d.sort((a,b) => {
+    let va=a[sortF]||'', vb=b[sortF]||'';
+    if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}
+    return va<vb?-sortD:va>vb?sortD:0;
+  });
+  filtered = d;
+  tp = Math.max(1, Math.ceil(d.length/ps));
+  if (cp > tp) cp = 1;
+  openRow = null;
+  renderTable(); renderPg();
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(t,q){
+  if(!q) return esc(t);
+  return esc(t).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
+}
+
+function renderTable() {
+  const body = document.getElementById('tblBody');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('tblCnt').textContent = `${filtered.length.toLocaleString()} of ${DB.length.toLocaleString()} companies`;
+  if (!filtered.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  const start=(cp-1)*ps, end=Math.min(start+ps,filtered.length);
+  const q = searchQ;
+  let html = '';
+  for (let i=start; i<end; i++) {
+    const r = filtered[i], sn = i+1;
+    const flags = [];
+    if(r.aeo) flags.push(`<span class="badge b-aeo"><span class="bdot"></span>AEO</span>`);
+    if(r.fasttrack) flags.push(`<span class="badge b-ft"><span class="bdot"></span>Fast Track</span>`);
+    if(r.certified) flags.push(`<span class="badge b-cert"><span class="bdot"></span>Certified</span>`);
+    const flagHtml = flags.length ? flags.join('') : `<span class="f-none">—</span>`;
+    const tinHtml = r.tin ? `<span class="c-tin">${hl(r.tin,q)}</span>` : `<span class="c-tin empty">N/A</span>`;
+    const hasContact = r.contact_person||r.phone||r.email;
+    const contactHtml = r.contact_person ? hl(r.contact_person,q) : (hasContact?'<span style="color:var(--text3);font-size:11px">—</span>':'<span style="color:var(--text3);font-size:11px">—</span>');
+    html += `<tr onclick="toggleDetail(${r.no},this)">
+      <td class="c-sn">${sn}</td>
+      <td class="c-no">${r.no}</td>
+      <td>${tinHtml}</td>
+      <td class="c-name">${hl(r.name,q)}</td>
+      <td><div class="c-flags">${flagHtml}</div></td>
+      <td style="font-size:12px;color:var(--text2);max-width:180px">${contactHtml}</td>
+    </tr>`;
+    // detail row (hidden by default, shown if openRow matches)
+    if (openRow === r.no) {
+      html += detailRowHtml(r);
+    }
+  }
+  body.innerHTML = html;
+}
+
+function detailRowHtml(r) {
+  const fields = [
+    {lbl:'TIN', val: r.tin||'—'},
+    {lbl:'Company Name', val: r.name},
+    {lbl:'Contact Person', val: r.contact_person||'', link:null},
+    {lbl:'Phone', val: r.phone||'', link: r.phone?`tel:${r.phone}`:null},
+    {lbl:'Email', val: r.email||'', link: r.email?`mailto:${r.email}`:null},
+    {lbl:'Flags', val: [r.aeo?'AEO':'', r.fasttrack?'Fast Track':'', r.certified?'Certified':''].filter(Boolean).join(', ')||'None'},
+  ];
+  const items = fields.map(f => {
+    const isEmpty = !f.val;
+    const display = f.link ? `<a href="${f.link}">${esc(f.val)}</a>` : isEmpty ? `<span class="detail-val empty">Not available</span>` : `<span>${esc(f.val)}</span>`;
+    return `<div class="detail-item"><div class="detail-lbl">${f.lbl}</div><div class="detail-val">${display}</div></div>`;
+  }).join('');
+  return `<tr class="detail-row"><td colspan="6"><div class="detail-grid">${items}</div></td></tr>`;
+}
+
+function toggleDetail(no, rowEl) {
+  // If clicking the already-open row, close it
+  if (openRow === no) { openRow = null; }
+  else { openRow = no; }
+  renderTable();
+  // Re-highlight selected row
+  if (openRow !== null) {
+    const rows = document.querySelectorAll('#tblBody tr');
+    rows.forEach(tr => { if(tr.dataset.no == no) tr.classList.add('row-selected'); });
+  }
+}
+
+// ── PAGINATION ────────────────────────────────────────────
+function renderPg() {
+  const s=(cp-1)*ps+1, e=Math.min(cp*ps,filtered.length);
+  document.getElementById('pgInfo').textContent = filtered.length ? `Showing ${s}–${e} of ${filtered.length.toLocaleString()}` : 'No results';
+  document.getElementById('btnFirst').disabled = cp<=1;
+  document.getElementById('btnPrev').disabled  = cp<=1;
+  document.getElementById('btnNext').disabled  = cp>=tp;
+  document.getElementById('btnLast').disabled  = cp>=tp;
+  const nums = document.getElementById('pgNums');
+  const pages=[]; let prev=null;
+  for(let p=1;p<=tp;p++) if(p===1||p===tp||Math.abs(p-cp)<=2) pages.push(p);
+  nums.innerHTML = pages.map(p=>{
+    let h=''; if(prev!==null&&p-prev>1) h+=`<span style="color:var(--text3);padding:0 2px;font-size:11px">…</span>`;
+    h+=`<button class="pg-btn${p===cp?' active':''}" onclick="goPage(${p})">${p}</button>`;
+    prev=p; return h;
+  }).join('');
+}
+function goPage(p){
+  if(p<1||p>tp) return; cp=p; openRow=null;
+  renderTable(); renderPg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function changePs(){ ps=parseInt(document.getElementById('pgSz').value); cp=1; tp=Math.max(1,Math.ceil(filtered.length/ps)); renderTable(); renderPg(); }
+
+// ── SORT ──────────────────────────────────────────────────
+function sortBy(f,ev){
+  if(sortF===f) sortD*=-1; else{sortF=f;sortD=1;}
+  document.querySelectorAll('thead th').forEach(t=>{t.classList.remove('sorted');const s=t.querySelector('.si');if(s)s.textContent='↕';});
+  ev.currentTarget.classList.add('sorted');
+  const si=ev.currentTarget.querySelector('.si'); if(si) si.textContent=sortD===1?'↑':'↓';
+  cp=1; apply();
+}
+
+// ── CHIPS & QUICK FILTER ──────────────────────────────────
+function toggleChip(el,f){
+  qfMode=null; document.querySelectorAll('.sc').forEach(c=>c.classList.remove('active'));
+  if(activeF.has(f)){ activeF.delete(f); el.classList.remove('active'); }
+  else {
+    const cf=CONFLICT[f];
+    if(cf&&activeF.has(cf)){ activeF.delete(cf); document.querySelector(`.chip[data-f="${cf}"]`)?.classList.remove('active'); }
+    activeF.add(f); el.classList.add('active');
+  }
+  cp=1; apply();
+}
+function quickFilter(mode,cardEl){
+  document.querySelectorAll('.sc').forEach(c=>c.classList.remove('active'));
+  qfMode=(qfMode===mode)?null:mode;
+  if(qfMode) cardEl.classList.add('active');
+  activeF.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  cp=1; apply();
+}
+function resetAll(){
+  activeF.clear(); qfMode=null; searchQ='';
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchClear').style.display='none';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.sc').forEach(c=>c.classList.remove('active'));
+  cp=1; apply();
+}
+function clearSearch(){ searchQ=''; document.getElementById('searchInput').value=''; document.getElementById('searchClear').style.display='none'; cp=1; apply(); }
+function toggleInfo(){ const d=document.getElementById('infoDetail'),t=document.querySelector('.info-toggle'); d.classList.toggle('open'); t.textContent=d.classList.contains('open')?'Hide ▴':'Show details ▾'; }
+
+// ── SEARCH ────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input',e=>{
+  searchQ=e.target.value.trim();
+  document.getElementById('searchClear').style.display=searchQ?'inline':'none';
+  cp=1; apply();
+});
+
+// ── EXPORT CSV ────────────────────────────────────────────
+function exportCSV(){
+  const rows=[['S/N','No','TIN','Company Name','AEO','Fast Track','Certified','Contact Person','Phone','Email']];
+  filtered.forEach((r,i)=>rows.push([
+    i+1, r.no, r.tin||'',
+    `"${(r.name||'').replace(/"/g,'""')}"`,
+    r.aeo?'Yes':'No', r.fasttrack?'Yes':'No', r.certified?'Yes':'No',
+    `"${(r.contact_person||'').replace(/"/g,'""')}"`,
+    r.phone||'',
+    `"${(r.email||'').replace(/"/g,'""')}"`
+  ]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download=`SL_DigSig_Companies_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── EXPORT PDF ────────────────────────────────────────────
+function exportPDF(){
+  const date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const filterDesc=buildDesc();
+  const totalR=DB.length, aeoN=DB.filter(r=>r.aeo).length, ftN=DB.filter(r=>r.fasttrack).length, certN=DB.filter(r=>r.certified).length;
+  const rows=filtered.map((r,i)=>{
+    const flags=[r.aeo?'AEO':'',r.fasttrack?'Fast Track':'',r.certified?'Certified':''].filter(Boolean).join(', ')||'—';
+    const name=esc(r.name), cp_=esc(r.contact_person||'—'), ph=esc(r.phone||'—'), em=esc(r.email||'—');
+    return `<tr>
+      <td>${i+1}</td><td style="font-family:monospace;font-size:9.5px">${esc(r.tin||'N/A')}</td>
+      <td>${name}</td><td>${flags}</td><td>${cp_}</td><td>${ph}</td><td>${em}</td>
+    </tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SL Digital Signature — Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:10.5px;color:#111;padding:18px 22px}
+h1{font-size:16px;font-weight:700;text-align:center;margin-bottom:3px}
+.sub{font-size:9.5px;color:#555;text-align:center;margin-bottom:14px}
+.filter-note{background:#FFFBEB;border:1px solid #FCD34D;border-radius:4px;padding:6px 10px;font-size:10px;margin-bottom:12px;color:#92400E}
+.stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sc{border:1px solid #ddd;border-radius:6px;padding:7px 11px;flex:1;min-width:90px}
+.sc-lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:2px}
+.sc-n{font-size:16px;font-weight:700;color:#2563EB}
+table{width:100%;border-collapse:collapse;margin-bottom:18px}
+thead th{background:#1F2937;color:#fff;padding:6px 7px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em}
+tbody tr:nth-child(even){background:#F9FAFB}
+tbody tr:hover{background:#EFF6FF}
+tbody td{padding:5px 7px;border-bottom:1px solid #e5e7eb;font-size:10px;vertical-align:top}
+.footer-pdf{background:#1F2937;color:#9CA3AF;text-align:center;padding:10px;font-size:10px;margin-top:8px}
+.footer-pdf strong{color:#F3F4F6}
+@media print{@page{size:A4 landscape;margin:12mm}body{padding:0}}
+</style></head><body>
+<h1>🔏 Sri Lanka Digital Signature — Company Database</h1>
+<div class="sub">Report generated: ${date} &nbsp;|&nbsp; Showing ${filtered.length.toLocaleString()} of ${totalR.toLocaleString()} companies</div>
+${filterDesc?`<div class="filter-note"><strong>Active filter:</strong> ${filterDesc}</div>`:''}
+<div class="stats">
+  <div class="sc"><div class="sc-lbl">Total</div><div class="sc-n">${totalR}</div></div>
+  <div class="sc"><div class="sc-lbl">AEO</div><div class="sc-n">${aeoN}</div></div>
+  <div class="sc"><div class="sc-lbl">Fast Track</div><div class="sc-n">${ftN}</div></div>
+  <div class="sc"><div class="sc-lbl">Certified</div><div class="sc-n">${certN}</div></div>
+  <div class="sc"><div class="sc-lbl">In Report</div><div class="sc-n">${filtered.length}</div></div>
+</div>
+<table>
+<thead><tr><th>S/N</th><th>TIN</th><th>Company Name</th><th>Flags</th><th>Contact Person</th><th>Phone</th><th>Email</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+<div class="footer-pdf"><strong>Developed by Buddhika Dissanayake</strong> — RARMB &copy; 2026 &nbsp;|&nbsp; Sri Lanka Digital Signature Registry</div>
+</body></html>`;
+
+  const w=window.open('','_blank','width=1000,height=750');
+  w.document.write(html); w.document.close();
+  w.onload=()=>{w.focus();w.print();};
+}
+
+function buildDesc(){
+  const parts=[];
+  if(qfMode&&qfMode!=='all'){const m={all:'All',aeo:'AEO',fasttrack:'Fast Track',certified:'Certified',none:'No Flags',
+    'aeo+certified':'AEO+Certified','fasttrack+certified':'FT+Certified','aeo+fasttrack':'AEO+FT','aeo+fasttrack+certified':'AEO+FT+Certified'};
+    parts.push(m[qfMode]||qfMode);}
+  for(const f of activeF){const m={aeo:'AEO',fasttrack:'Fast Track',certified:'Certified',not_aeo:'Not AEO',not_ft:'Not FT',not_cert:'Not Certified'};parts.push(m[f]||f);}
+  if(searchQ) parts.push(`Search: "${searchQ}"`);
+  return parts.join(' AND ');
+}
+
+// ── START ─────────────────────────────────────────────────
+loadDB();
+</script>
+</body>
+</html>
